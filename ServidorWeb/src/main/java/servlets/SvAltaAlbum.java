@@ -1,84 +1,64 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
+
 package servlets;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import controladores.iSistema;
+import controladores.Fabrica;
+import jakarta.servlet.http.HttpSession;
 
-/**
- *
- * @author miche
- */
+
 @WebServlet(name = "SvAltaAlbum", urlPatterns = {"/SvAltaAlbum"})
 public class SvAltaAlbum extends HttpServlet {
+iSistema sys = new Fabrica().getSistema();
 
-    /**
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-     * methods.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet SvAltaAlbum</title>");            
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet SvAltaAlbum at " + request.getContextPath() + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
-        }
     }
+    
 
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         processRequest(request, response);
+    
     }
 
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         processRequest(request, response);
+        
+        //Album 
+        HttpSession session = request.getSession();
+        String nickname = session.getAttribute("nickname").toString();
+        String nombreA = request.getParameter("nombreA");
+        Integer anio = Integer.parseInt(request.getParameter("anio"));
+        String imagen = request.getParameter("imagen");
+        
+        //Genero
+        String nombreG = request.getParameter("nombreG");
+        
+        //Tema
+        String nombreT = request.getParameter("nombreT");
+        String duracion = request.getParameter("duracion");
+        Integer pos = Integer.parseInt(request.getParameter("pos"));
+        String direccionWeb = request.getParameter("direccionWeb");
+        String archivo = request.getParameter("archivo");
+        
+        sys.cargarDatosAlbum(nombreA, nickname, anio, imagen);
+        sys.altaTema(nombreT, duracion, pos, direccionWeb, archivo);
+        sys.addGeneroAlbum(nombreG);
+        sys.altaAlbum();
+        response.sendRedirect("altaAlbum.jsp");
     }
+    
 
-    /**
-     * Returns a short description of the servlet.
-     *
-     * @return a String containing servlet description
-     */
     @Override
     public String getServletInfo() {
         return "Short description";
