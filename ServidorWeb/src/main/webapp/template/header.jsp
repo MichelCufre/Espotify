@@ -84,6 +84,11 @@
     </nav>
 </header>
 <style>
+    
+    .navbar navbar-expand-lg custom-navbar{
+        position: sticky;
+        
+    }
     .custom-navbar {
         background: linear-gradient(to right, #d3d3d3, #f0f0f0);
     }

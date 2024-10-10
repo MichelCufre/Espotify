@@ -97,9 +97,6 @@ public class SvRegistroUsuario extends HttpServlet {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error en el servidor.");
         }
         
-        
-        
-        
         System.out.println("Pasa la verificacion de mail y nick");
         
         String tipo = request.getParameter("tipo_usuario");
@@ -187,7 +184,7 @@ public class SvRegistroUsuario extends HttpServlet {
             return;
         }
         response.setStatus(202);
-        response.sendRedirect("index.jsp?msg=usrcreado");
+        response.sendRedirect("index.jsp");
         System.out.println("correcto");
     }
     
