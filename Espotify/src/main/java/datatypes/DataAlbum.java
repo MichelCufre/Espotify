@@ -9,8 +9,8 @@ public class DataAlbum {
     private String nombre;
     private Integer fechaCreacion;
     private String ImagenAlbum;
-    private  Collection<DataTema> Temas;
-    private  Collection<String> Generos;
+    private Collection<DataTema> Temas;
+    private Collection<String> Generos;
 
     public DataAlbum(String nombre, Integer fechaCreacion, String imagen, Collection<DataTema> temas, Collection<String> generos) {
         this.nombre = nombre;

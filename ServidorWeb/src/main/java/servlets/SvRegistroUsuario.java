@@ -62,6 +62,7 @@ public class SvRegistroUsuario extends HttpServlet {
         processRequest(request, response);
         
         String action = request.getParameter("action");
+        
         if ("checkNickname".equals(action) || "checkEmail".equals(action)) {
             String value = request.getParameter("value");
             try {
@@ -170,6 +171,8 @@ public class SvRegistroUsuario extends HttpServlet {
         } else {
             System.out.println("No se ha subido ninguna imagen o el archivo esta vacio");
         }
+        
+        
         
         System.out.println("Pasa la imagen y estoy afuera del try de altaperfil");
         

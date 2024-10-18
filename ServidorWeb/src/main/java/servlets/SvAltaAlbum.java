@@ -10,17 +10,21 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import controladores.iSistema;
 import controladores.Fabrica;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
+import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
-import datatypes.DataAlbum;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import datatypes.DataTema;
-import java.util.Collection;
-import logica.Tema;
+import rutaP.rutaProyecto;
+
 
 
 
 @WebServlet(name = "SvAltaAlbum", urlPatterns = {"/SvAltaAlbum"})
+@MultipartConfig
 public class SvAltaAlbum extends HttpServlet {
 iSistema sys = new Fabrica().getSistema();
 
@@ -36,94 +40,90 @@ iSistema sys = new Fabrica().getSistema();
     
     }
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        processRequest(request, response);
-        sys.cargarGenerosSys();
-        HashSet<String> generosS = sys.getGeneros();
-        
-        //Album 
-        HttpSession session = request.getSession();
-String nickname = session.getAttribute("nickname").toString();
-System.out.println("Nickname: " + nickname); // Imprimir el nickname
-
-String nombreA = request.getParameter("nombreA");
-System.out.println("Nombre Álbum: " + nombreA); // Imprimir el nombre del álbum
-
-try {
-    boolean existe = sys.verificaAlbum(nombreA, nickname);
-    if (existe) {
-        response.sendError(HttpServletResponse.SC_CONFLICT, "nombre");
-        return;
-    }
-} catch (Exception ex) {
-    response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error en el servidor.");
-}
-
-String anioStr = request.getParameter("anio"); // Cambiado a String para evitar NullPointerException
-Integer anio = null;
-if (anioStr != null && !anioStr.isEmpty()) {
-    anio = Integer.parseInt(anioStr);
-} else {
-    System.out.println("Año: No se recibió el año."); // Imprimir mensaje si anio es null
-}
-System.out.println("Año: " + anio); // Imprimir el año
-
-String imagen = request.getParameter("imagen");
-System.out.println("Imagen: " + imagen); // Imprimir la imagen
-
-String action = request.getParameter("action");
-System.out.println("Action: " + action); // Imprimir la acción
-
-String value = request.getParameter("value");
-System.out.println("Value: " + value); // Imprimir el valor
-        ObjectMapper mapper = new ObjectMapper();
-        DataAlbum albumData = mapper.readValue(request.getInputStream(), DataAlbum.class);
-
-        // Obtener los géneros y temas desde el JSON
-        Collection<String> generos = albumData.getGeneros();
-        Collection<DataTema> temas = albumData.getTemas();
-
-//        // Lógica de ejemplo: verificar si ya existe algún género o tema duplicado
-//        for (String genero : generos) {
-//            if (sys.encontrarGenero(nombreG)) {
-//                response.sendError(HttpServletResponse.SC_CONFLICT, "El género " + genero + " ya existe.");
-//                return;
-//            }
-//        }
-//
-//        for (DataTema tema : temas) {
-//            if (tema.getNombre() == nombreT) {
-//                response.sendError(HttpServletResponse.SC_CONFLICT, "El tema " + tema.getNombre() + " ya existe.");
-//                return;
-//            }
-//        }
-
-        // Responder con éxito
-        response.setStatus(HttpServletResponse.SC_OK);
+  @Override
+protected void doPost(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
+    processRequest(request, response);
     
+    HttpSession session = request.getSession();
+    String genero = request.getParameter("nombreG");
+    String album = request.getParameter("nombreA");
+    String nickname = session.getAttribute("nickname").toString();
+    String anioStr = request.getParameter("anio");
+
+    // Manejo de errores para la obtención del año
+    
+        if ("".equals(anioStr)) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "La posicion es requerida.");
+            return; 
+        }
         
-        
-        if (action.equals("checkAlbumName")) {
+    String action = request.getParameter("action");
+    // Verificación del nombre del álbum
+    if ("checkAlbumName".equals(action)) {
+        String value = request.getParameter("value");
+        try {
             boolean exists = sys.verificaAlbum(value, nickname);
             response.getWriter().write(exists ? "exists" : "available");
-        } else if (action.equals("checkGenre")) {
-            boolean exists = sys.encontrarGenero(value);
-            response.getWriter().write(exists ? "exists" : "available");
+            response.setStatus(HttpServletResponse.SC_OK);
+        } catch (Exception ex) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error en el servidor.");
         }
-    
-        
-        sys.cargarDatosAlbum(nombreA, nickname, anio, imagen);
-        for (DataTema dtT : temas){
-            sys.altaTema(dtT.getNombre(), dtT.getDuracion(), dtT.getPosicion(), dtT.getDireccionWeb(), dtT.getArchivo());
-        }
-        for (String gen : generos){
-            sys.addGeneroAlbum(gen);
-        }
-        sys.altaAlbum();
-        response.sendRedirect("altaAlbum.jsp");
+        return;
     }
+    Integer anio = Integer.valueOf(anioStr); 
+
+
+    // Carga de la imagen
+    String uploadPath = null;
+    String filePath = null;
+    String rutaimg = null;
+    Part filePart = request.getPart("imagen");
+
+    if (filePart != null && filePart.getSize() > 0) {
+        uploadPath = rutaProyecto.getRuta() + "imagenes_album";   
+
+        String contentType = filePart.getContentType();
+        String[] contentParts = contentType.split("/");
+        String imageFormat = contentParts[1];
+        String fileName = album + "." + imageFormat;
+        filePath = uploadPath + File.separator + fileName;
+
+        File uploadDir = new File(uploadPath);
+        if (!uploadDir.exists()) {
+            uploadDir.mkdirs();
+        }
+
+        rutaimg = "imagenes_albumes/" + fileName;
+
+        try (InputStream input = filePart.getInputStream()) {
+            Files.copy(input, new File(filePath).toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error al guardar la imagen.");
+            return;
+        }
+    } else {
+        System.out.println("No se ha subido ninguna imagen o el archivo está vacío");
+    }
+    
+    // ALTA ALBUM
+    try {
+        boolean exist = sys.verificaAlbum(album, nickname);
+        if (!exist) {
+            sys.cargarDatosAlbum(album, nickname, anio, rutaimg);
+            sys.altaAlbum();
+            response.setStatus(HttpServletResponse.SC_OK);
+        } else {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "El álbum ya existe.");
+        }
+    } catch (Exception e) {
+        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error al crear el álbum.");
+    }
+    
+    session.removeAttribute("temas");
+    session.removeAttribute("temasPos");
+    session.removeAttribute("generos");
+}
     
 
     @Override
