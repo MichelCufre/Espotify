@@ -111,7 +111,6 @@
                 %>
                         <li>
                             <span class="toggle-tree"><%= nombreGenero %></span>
-
                         </li>
                 <%
                         }
@@ -311,6 +310,14 @@
                     }
                 }
             });
+            
+            
+//        let generos = document.getElementsByClassName('toggle-tree');
+//                for let (genero : generos){
+//                    genero.addEventListener('click', function() {
+//                    document.getElementById('nombreG').value = this.value;  
+//                )}
+//            }
 
         // Verificación de campos y duplicados con AJAX
         $(document).ready(function() {

@@ -1,9 +1,4 @@
-<%-- 
-    Document   : login
-    Created on : 29 set. 2024, 15:40:05
-    Author     : dokgo
---%>
-
+<%@page import= "java.util.List"%>
 <%@page import= "datatypes.DataTema"%>
 <%@page import= "datatypes.DataGenero"%>
 <%@page import= "datatypes.DataUsuario"%>
@@ -38,20 +33,20 @@
                 <div class="sidebar-option" data-option="albumes">Albumes</div>
             </div>
                <div class="main-content">
-            <h2 id="content-title">Géneros</h2>
-            <div id="extra-grid" class="album-grid mt-4"></div>
+            <h2 id="content-title"></h2>
             <div id="album-grid" class="album-grid mt-4"></div>
             <div id="album-details" class="mt-4" style="display: none;">
                 <div class="row">
                     <div class="col-md-4">
-                        <img id="album-cover" src="" alt="Album cover" class="img-fluid">
+                        <img id="album-cover" src="${pageContext.request.contextPath}/imagenes_album/fotoAlbum.jpg" alt="Foto Album" class="img-fluid">
                     </div>
                     <div class="col-md-8">
                         <h3 id="album-title"></h3>
-                        <p id="album-artist"></p>
+                        <a href="" id="album-artist"></a>
                         <p id="album-genre"></p>
                         <button class="btn btn-primary me-2">Play</button>
                         <button class="btn btn-secondary">Download</button>
+                        <button class="btnFav">☆</button>
                         <div class="track-list mt-4">
                             <table class="table">
                                 <thead>
@@ -84,9 +79,26 @@
             const contentTitle = document.getElementById('content-title');
             const sidebarOptions = document.querySelectorAll('.sidebar-option');
             let isPlaying = false;
-            let albumSelected = "";
+            let albumSelected;
             let generoSelected = "";
             let artistaSelected = "";
+             <% 
+             iSistema sys = new Fabrica().getSistema();
+             ObjectMapper mapper = new ObjectMapper();
+             mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+             List<DataAlbum> albums = sys.getAllAlbums();
+             DataGenero[] generos = sys.getGeneros2(); 
+             DataUsuario[] artistas = sys.getArtistas(); 
+             String albumsJson = mapper.writeValueAsString(albums);
+             String generosJson = mapper.writeValueAsString(generos);
+             String artistasJson = mapper.writeValueAsString(artistas);
+             %>
+            const artistas = <%= artistasJson %>;
+            const generos = <%= generosJson %>;
+            const albums = <%= albumsJson %>;
+            let albumsGen = [];
+            let albumsArt = [];
+            let tracks = [];
 
             playBtn.addEventListener('click', () => {
                 if (isPlaying) {
@@ -98,178 +110,185 @@
                 }
             });
 
-            sidebarOptions.forEach(option => {
+        sidebarOptions.forEach(option => {
         option.addEventListener('click', () => {
-        const selectedOption = option.dataset.option;
-//        if (selectedOption === 'generos') {
-//            displayExtra('generos'); // Mostrar géneros
-//        } else if (selectedOption === 'artistas') {
-//            displayExtra('artistas'); // Mostrar artistas
-//        }
-        if (selectedOption === 'albumes') {
-            displayAlbums();  // Muestra los álbumes
-        }
-        document.getElementById('content-title').textContent = option.textContent;
+            const selectedOption = option.dataset.option;
+            
+             if (selectedOption === 'generos' || selectedOption === 'artistas') {
+                displayExtra(selectedOption); 
+            } else if (selectedOption === 'albumes') {
+                displayAlbums(albums); 
+            }
+            document.getElementById('content-title').textContent = option.textContent;
+        });
     });
-});
-        <% 
-        iSistema sys = new Fabrica().getSistema();
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule()); // Registrar el módulo para fechas de Java 8
-        DataGenero[] generos = sys.getGeneros2(); 
-        DataUsuario[] artistas = sys.getArtistas(); 
         
-        String generosJson = mapper.writeValueAsString(generos);
-        String artistasJson = mapper.writeValueAsString(artistas);
-        %>
-        const artistas = JSON.parse('<%=generosJson.replace("\"", "\\\"")%>');
-    const generos = JSON.parse('<%=artistasJson.replace("\"", "\\\"")%>');
+        function getAlbumsGen(){
+
+        let value = generoSelected;
+        checkType = 'Genero';
+        $.ajax({
+                url: 'SvGetAlbumBy',
+                method: 'POST',
+                data: { action: checkType, value: value },
+                success: function(response) {
+
+                        albumsGen = JSON.parse(response);
+                        displayAlbums(albumsGen);
+                },
+                error: function() {
+                   alert("Error");
+                }
+            });
+        }
         
-        const tracks = [
-            { id: 1, title: "Déjame Bailar", duration: "3:25" },
-            { id: 2, title: "Nada Para Ver", duration: "3:57" },
-            { id: 3, title: "Venganza", duration: "3:41" },
-            { id: 4, title: "Llévame Contigo", duration: "3:14" },
-            { id: 5, title: "No Era Cierto", duration: "3:33" },
-            { id: 6, title: "Quemado", duration: "3:10" }
-        ];
+        function getAlbumsArt(){
 
+        let value = artistaSelected;
+        checkType = 'Artista';
+        $.ajax({
+                url: 'SvGetAlbumBy',
+                method: 'POST',
+                data: { action: checkType, value: value },
+                success: function(response) {
 
-//        function displayExtra() {
-//            const extraGrid = document.getElementById('extra-grid');
-//            extraGrid.innerHTML = '';
-//            let titulo = document.getElementById('content-title');
-//            const selectedOption = option.dataset.option;
-//        if (selectedOption === 'generos'){
-//            generos.forEach(genero => {
-//                const generoCard = document.createElement('div');
-//
-//                generoCard.className = 'genero-card';
-//                  
-//                const titleElement = document.createElement('h5');
-//                titleElement.textContent = genero.nombre;
-//                generoCard.appendChild(titleElement);
-//
-//                generoCard.addEventListener('click', () => displayAlbums(genero));
-//                extraGrid.appendChild(generoCard);
-//            });
-//        }else if (selectedOption === 'artistas'){
-//                artistas.forEach(artista => {
-//                const artistaCard = document.createElement('div');
-//
-//                artistaCard.className = 'genero-card';
-//                  
-//                const titleElement = document.createElement('h5');
-//                titleElement.textContent = artista.nickname;
-//                artistaCard.appendChild(titleElement);
-//
-//                artistaCard.addEventListener('click', () => displayAlbums(artista));
-//                extraGrid.appendChild(generoCard);
-//            });
-//            }
-//        }
-
-        function displayAlbums() {
+                    albumsArt = JSON.parse(response);
+                    displayAlbums(albumsArt);
+                    
+                },
+                error: function() {
+                   alert("Error");
+                }
+            });
+        }
+        
+        function displayExtra(selectedOption) {
             const albumGrid = document.getElementById('album-grid');
             albumGrid.innerHTML = '';
-            albums.forEach(album => {
-                const albumCard = document.createElement('div');
+            let titulo = document.getElementById('content-title');
+            if (selectedOption === 'generos'){
+                generos.forEach(genero => {
+                    const generoCard = document.createElement('div');
+                    generoCard.className = 'genero-card';
+                    const titleElement = document.createElement('h5');
+                    titleElement.textContent = genero.nombre;
+                    generoCard.appendChild(titleElement);
 
+
+                    generoCard.addEventListener('click', function() {
+                        generoSelected = genero.nombre;
+                        getAlbumsGen(); 
+                    });
+                    albumGrid.appendChild(generoCard);
+                });
+            }else if (selectedOption === 'artistas'){
+                    artistas.forEach(artista => {
+                    const artistaCard = document.createElement('div');
+                    artistaCard.className = 'artista-card';
+
+                    if(artista.imagen !== null ){
+                    const imgElement = document.createElement('img');
+                    
+                    imgElement.src = "${pageContext.request.contextPath}/imagenes_perfil/" + artista.imagen; 
+                    imgElement.className = "albumImg";
+                    imgElement.alt = artista.nombre;
+                    artistaCard.appendChild(imgElement);  
+                    }else{
+                        const imgElement = document.createElement('img');
+                        imgElement.src = "${pageContext.request.contextPath}/assets/user.svg";
+                        imgElement.className = "albumImg";
+                        artistaCard.appendChild(imgElement);  
+                    }
+
+                    const titleElementArt = document.createElement('h5');
+                    titleElementArt.textContent = artista.nick;
+                    artistaCard.appendChild(titleElementArt);
+
+
+                    artistaCard.addEventListener('click', function() {
+                        artistaSelected = artista.nick;
+                        getAlbumsArt(); 
+                    });
+                    albumGrid.appendChild(artistaCard);
+                });
+            
+            }
+        }
+
+        function displayAlbums(dtList) {
+            const albumGrid = document.getElementById('album-grid');
+            albumGrid.innerHTML = '';
+            if(dtList !== null){
+            dtList.forEach(album => {
+                const albumCard = document.createElement('div');
+                console.log(album);
+                console.log(album.imagenAlbum);
                 albumCard.className = 'album-card';
-                
-                  // Crear y agregar el título
-                const imgElement = document.createElement('img');
-                imgElement.src = album.img;
-                imgElement.src = album.nombre;
-                albumCard.appendChild(imgElement);  
-                  
+                if(album.imagenAlbum !== null ){
+                    const imgElement = document.createElement('img');
+                    imgElement.className = "albumImg";
+                    imgElement.src = "${pageContext.request.contextPath}/imagenes_album/" + album.imagenAlbum; 
+                    imgElement.alt = album.nombre;
+                    albumCard.appendChild(imgElement);  
+                }else{
+                    const imgElement = document.createElement('img');
+                    imgElement.src = "${pageContext.request.contextPath}/imagenes_album/fotoAlbum.jpg"
+                    imgElement.className = "albumImg";
+                    albumCard.appendChild(imgElement);  
+                }
                 const titleElement = document.createElement('h5');
                 titleElement.textContent = album.nombre;
                 albumCard.appendChild(titleElement);
 
                 // Crear y agregar el artista
                 const artistElement = document.createElement('a');
-                artistElement.textContent = album.artista;
+                artistElement.textContent = album.nombreArt;
                 albumCard.appendChild(artistElement);
 
-                albumCard.addEventListener('click', () => displayAlbumDetails(album));
+
+                albumCard.addEventListener('click', function() {
+                    albumSelected = album;
+                    displayAlbumDetails(albumSelected);
+                    
+                });
                 albumGrid.appendChild(albumCard);
             });
+            }
         }
-        
-//        function displayAlbums(genero) {
-//            generoSelected = genero.nombre;
-//            const albumGrid = document.getElementById('album-grid');
-//            albumGrid.innerHTML = '';
-//            albumsGen.forEach(album => {
-//                const albumCard = document.createElement('div');
-//                albumCard.className = 'album-card';
-//                
-//                  // Crear y agregar el título
-//                const imgElement = document.createElement('img');
-//                imgElement.src = album.img;
-//                imgElement.src = album.nombre;
-//                albumCard.appendChild(imgElement);  
-//                  
-//                const titleElement = document.createElement('h5');
-//                titleElement.textContent = album.nombre;
-//                albumCard.appendChild(titleElement);
-//
-//                // Crear y agregar el artista
-//                const artistElement = document.createElement('a');
-//                artistElement.textContent = album.artista;
-//                albumCard.appendChild(artistElement);
-//
-//                albumCard.addEventListener('click', () => displayAlbumDetails(album));
-//                albumGrid.appendChild(albumCard);
-//            });
-//        }
-//        
-//        function displayAlbums(artista) {
-//            artistaSelected = artista.nombre;
-//            const albumGrid = document.getElementById('album-grid');
-//            albumGrid.innerHTML = '';
-//            albumsArt.forEach(album => {
-//                const albumCard = document.createElement('div');
-//
-//                albumCard.className = 'album-card';
-//                
-//                  // Crear y agregar el título
-//                const imgElement = document.createElement('img');
-//                imgElement.src = album.img;
-//                imgElement.src = album.nombre;
-//                albumCard.appendChild(imgElement);  
-//                  
-//                const titleElement = document.createElement('h5');
-//                titleElement.textContent = album.nombre;
-//                albumCard.appendChild(titleElement);
-//
-//                // Crear y agregar el artista
-//                const artistElement = document.createElement('a');
-//                artistElement.textContent = album.artista;
-//                albumCard.appendChild(artistElement);
-//
-//                albumCard.addEventListener('click', () => displayAlbumDetails(album));
-//                albumGrid.appendChild(albumCard);
-//            });
-//        }
 
         function displayAlbumDetails(album) {
-            albumSelected = album.nombre;
             document.getElementById('album-grid').style.display = 'none';
             document.getElementById('album-details').style.display = 'block';
-            document.getElementById('album-cover').src = album.img;
+            if(album.imagenAlbum !== null){
+                document.getElementById('album-cover').src = "${pageContext.request.contextPath}/imagenes_album/" + album.imagenAlbum; 
+            }else{
+                document.getElementById('album-cover').src = "${pageContext.request.contextPath}/imagenes_album/fotoAlbum.jpg"; 
+            }
             document.getElementById('album-title').textContent = album.nombre;
-            //document.getElementById('album-artist').textContent = album.artist;
-            //document.getElementById('album-genre').textContent = album.genero;
-
+            document.getElementById('album-artist').textContent = album.nombreArt;
+            document.getElementById('album-genre').textContent = album.Generos;
+            tracks = album.temas;
             const trackListBody = document.getElementById('track-list-body');
             trackListBody.innerHTML = '';
             tracks.forEach((track, index) => {
                 const row = trackListBody.insertRow();
-                row.insertCell(0).textContent = index + 1;
-                row.insertCell(1).textContent = track.title;
-                row.insertCell(2).textContent = track.duration;
+                row.insertCell(0).textContent = track.id;
+                row.insertCell(1).textContent = track.nombre;
+                row.insertCell(2).textContent = track.duracion;
+                const buttonCell = row.insertCell(3);
+
+                const button = document.createElement("button");
+                button.className = "btnFav"; // Asignar la clase
+                button.textContent = "☆"; // Texto del botón
+
+                const buttons = document.getElementsByClassName("btnFav");
+
+                for (let button of buttons) {
+                    button.addEventListener("click", () => {
+
+                    });
+}
+                buttonCell.appendChild(button);
             });
         }
 
@@ -280,7 +299,6 @@
             sidebarLinks.forEach(link => {
                 link.addEventListener('click', (e) => {
                     document.getElementById('content-title').textContent = e.target.textContent;
-//                    document.getElementById('extra-grid').style.display = 'grid';
                     document.getElementById('album-grid').style.display = 'grid';
                     document.getElementById('album-details').style.display = 'none';
                 });
@@ -289,7 +307,6 @@
         </script>
     </body>
 </html>
-
 
 <style>
 *{
@@ -303,6 +320,29 @@ body {
     flex-direction: column;
     min-height: 100vh;
 }
+
+.albumImg {
+    height: 150px;
+    width: 150px;
+    object-fit: cover;
+}
+
+.album-cover {
+    height: 250px;
+    width: 250px;
+    object-fit: cover;
+}
+
+.btnFav{
+    border: none;         
+    background: none;     
+    padding: 0;           
+    margin: 0;            
+    cursor: pointer;     
+    outline: none; 
+    font-size: 35px;
+}
+
 .content-wrapper {
     display: flex;
     flex-grow: 1;
@@ -371,7 +411,9 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 20px;
 }
-.album-card {
+.album-card,
+.genero-card,
+.artista-card {
     cursor: pointer;
     transition: transform 0.3s;
     border: 1px solid #ccc;
@@ -386,6 +428,4 @@ body {
     max-height: 300px;
     overflow-y: auto;
 }
-
-
 </style>

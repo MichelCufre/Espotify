@@ -88,10 +88,8 @@ protected void doPost(HttpServletRequest request, HttpServletResponse response)
         
         
         String nickname = session.getAttribute("nickname").toString();
-
         // Verificar si el álbum existe
         if (!sys.verificaAlbum(album, nickname)) {
-            
             sys.altaTema(nombreT, duracion, pos, dirW, archivo);
             session.setAttribute("temas", temas);
             session.setAttribute("temasPos", temasPos);
