@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="6.0" xmlns="https://jakarta.ee/xml/ns/jakartaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd">
+    <session-config>
+        <session-timeout>
+            30
+        </session-timeout>
+    </session-config> 
+<!--    <listener>
+        <description>ServletContextListener</description>
+        <listener-class>MyAppListener</listener-class>
+    </listener>-->
+    
+    <filter>
+        <filter-name>GuiFilter</filter-name>
+        <filter-class>GuiFilter</filter-class>
+    </filter>
+    
+    <filter-mapping>
+        <filter-name>GuiFilter</filter-name>
+        <url-pattern>/gui</url-pattern> <!-- Esto aplica a todas las URLs -->
+    </filter-mapping>
+    
+    <servlet>
+        <servlet-name>ServicioWeb</servlet-name>
+        <servlet-class>com.sun.xml.ws.transport.http.servlet.WSServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ServicioWeb</servlet-name>
+        <url-pattern>/ServicioWeb</url-pattern>
+    </servlet-mapping>
+    <listener>
+        <listener-class>com.sun.xml.ws.transport.http.servlet.WSServletContextListener</listener-class>
+    </listener>
+</web-app>
