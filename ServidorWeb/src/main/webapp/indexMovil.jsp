@@ -1,12 +1,13 @@
-<%@page import="com.servicios.ServicioWeb_Service"%>
-<%@page import="com.servicios.ServicioWeb"%>
+<%@page import="persistencia.ControladorPersistencia"%>
 <%@page import= "java.util.List"%>
 <%@page import= "java.util.Vector"%>
-<%@page import= "com.servicios.DataTema"%>
-<%@page import= "com.servicios.DataGenero"%>
-<%@page import= "com.servicios.DataUsuario"%>
-<%@page import= "com.servicios.DataAlbum"%>
-<%@page import= "com.servicios.DataLista"%>
+<%@page import= "datatypes.DataTema"%>
+<%@page import= "datatypes.DataGenero"%>
+<%@page import= "datatypes.DataUsuario"%>
+<%@page import= "datatypes.DataAlbum"%>
+<%@page import= "datatypes.DataLista"%>
+<%@page import= "controladores.Fabrica"%>
+<%@page import= "controladores.iSistema"%>
 <%@page import="com.fasterxml.jackson.databind.ObjectMapper"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
@@ -15,7 +16,8 @@
     <head>
         <title>Espotify</title>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
         <!--Boostrap-->
         <link rel="stylesheet" href="${pageContext.request.contextPath}/boostrap/css/bootstrap.min.css">
         <script src="${pageContext.request.contextPath}/boostrap/js/jquery-3.7.1.min.js"></script>
@@ -24,19 +26,14 @@
     </head>
     
     <body class="bg-light">
-        <jsp:include page="/template/header.jsp" />
+        <jsp:include page="/template/headerMovil.jsp" />
         <div class="container">  
             <h1></h1>
         </div>
         
-        <div class="content-wrapper">
-            <div class="sidebar">
-                <div class="sidebar-option" data-option="generos">Generos</div>
-                <div class="sidebar-option" data-option="artistas">Artistas</div>
-                <div class="sidebar-option" data-option="albumes">Albumes</div>
-                <div class="sidebar-option" data-option="listas">Listas de Reproducción</div>
-                <div class="sidebar-option" data-option="recomendado">Recomendado</div>
-                <a class="sidebar-option nav-link" href="${pageContext.request.contextPath}/svRankingUsuarios">Ranking de Usuarios</a>
+        <!--<div class="content-wrapper">-->
+            <div class="topnav" >
+
             </div>
                <div class="main-content">
             <h2 id="content-title"></h2>
@@ -70,14 +67,14 @@
                 </div>
             </div>
         </div>
-            <div class="player">
+            <footer class="player">
                 <img src="" class="albumImg" id="albumCoverPlayer" alt="Album cover">
                 <div class="controls">
                     <button id="playBtn">▶</button>
                 </div>
                 <input type="range" class="volume" id="volume"  min="0" max="100" value="50">
-            </div>
-        </div>
+            </footer>
+        <!--</div>-->
 
 
         <script>
@@ -94,17 +91,16 @@
                         // En la vista de listas, oculta la columna # o elimina las celdas de la columna #
                         document.getElementById('track-number-header').style.display = 'none';
                         trackListBody.querySelectorAll('.track-number').forEach(cell => cell.style.display = 'none');
-                    
-                    } else if (optionType === 'recomendado') {
-                        
-                        document.getElementById('track-number-header').style.display = 'none';
-                        trackListBody.querySelectorAll('.track-number').forEach(cell => cell.style.display = 'none');
                     }
                 });
             });
             
             
- 
+            document.addEventListener("DOMContentLoaded", function() {
+                cargarAlbumesFavoritos();
+                cargarListasFavoritas();
+                cargarTemasFavoritos();
+            });
             const playBtn = document.getElementById('playBtn');
             const contentTitle = document.getElementById('content-title');
             const sidebarOptions = document.querySelectorAll('.sidebar-option');
@@ -118,10 +114,9 @@
             let generoSelected = "";
             let artistaSelected = "";
              <% 
-            ServicioWeb sys;
-            ServicioWeb_Service service = new ServicioWeb_Service();
-            sys = service.getServicioWebPort();
-                 
+            ControladorPersistencia cpu = new ControladorPersistencia();
+            iSistema sys = new Fabrica().getSistema(cpu);
+            
             DataUsuario dataUsuario = (DataUsuario) session.getAttribute("dataUsuario");
             boolean isLoggedIn = (dataUsuario != null);
             boolean isCliente = (isLoggedIn && "cliente".equalsIgnoreCase(dataUsuario.getTipo()));
@@ -129,7 +124,7 @@
             
             if(dataUsuario != null){
                 if(isCliente){
-                    if(sys.obtenerCliente(dataUsuario.getNick()).getSub() != null){
+                    if(sys.ObtenerCliente(dataUsuario.getNick()).getSub() != null){
                         estado = sys.darSubUsuario(dataUsuario.getNick()).getEstado();
                      }
                 }
@@ -138,21 +133,15 @@
             ObjectMapper mapper = new ObjectMapper();
             mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
             List<DataAlbum> albums = sys.getAllAlbums();
-            //DataGenero[] generos = sys.getGeneros2(); 
-            DataGenero[] generos = sys.getGeneros2().toArray(new DataGenero[0]);
-            //DataUsuario[] artistas = sys.getArtistas(); 
-            DataUsuario[] artistas = sys.getArtistas().toArray(new DataUsuario[0]);
-            //Vector<DataLista> listaPartPublicas = sys.traerListasParticularesPublicas();
-            Vector<DataLista> listaPartPublicas = new Vector<>(sys.traerListasParticularesPublicas());
-            
+            DataGenero[] generos = sys.getGeneros2(); 
+            DataUsuario[] artistas = sys.getArtistas(); 
+            Vector<DataLista> listaPartPublicas = sys.traerListasParticularesPublicas();
             List<DataLista> listaDefecto = sys.traerListasPorDefecto();
-            List<DataTema> allTemas = sys.getAllTemas();
             String albumsJson = mapper.writeValueAsString(albums);
             String generosJson = mapper.writeValueAsString(generos);
             String artistasJson = mapper.writeValueAsString(artistas);
             String listaPartPublicasJson = mapper.writeValueAsString(listaPartPublicas);
             String listaDefectoJson = mapper.writeValueAsString(listaDefecto);
-            String allTemasJson = mapper.writeValueAsString(allTemas);
             %>
             const artistas = <%= artistasJson %>;
             const generos = <%= generosJson %>;
@@ -160,19 +149,9 @@
             let albumsGen = [];
             let albumsArt = [];
             let tracks = [];
-            let allTracks = <%= allTemasJson %>;
             let listaPartPublicas = <%= listaPartPublicasJson %>;
             let listaDefecto = <%= listaDefectoJson %>;
-            console.log(allTracks);
             
-            <%
-            if(isLoggedIn){ %>
-                document.addEventListener("DOMContentLoaded", function() {
-                    cargarAlbumesFavoritos();
-                    cargarListasFavoritas();
-                    cargarTemasFavoritos();
-                });
-            <%}%>
 
         sidebarOptions.forEach(option => {
         option.addEventListener('click', () => {
@@ -180,25 +159,16 @@
             
             if (selectedOption === 'generos' || selectedOption === 'artistas' || selectedOption === 'listas') {
                 displayExtra(selectedOption); 
-                document.getElementById("searchBar").value = "";
-            document.getElementById('album-details').style.display = 'none';
-            document.getElementById('album-grid').style.display = 'grid';
             } else if (selectedOption === 'albumes') {
-                document.getElementById("searchBar").value = "";
+                displayAlbums(albums); 
+            }
+            document.getElementById("searchBar").value = "";
             document.getElementById('album-details').style.display = 'none';
             document.getElementById('album-grid').style.display = 'grid';
-                displayAlbums(albums); 
-            } else if (selectedOption === 'recomendado') {
-                displayAllTemas();
-            }
-         
-          
             document.getElementById('content-title').textContent = option.textContent;
             
             });
         });
-        
-
         
         function getAlbumsGen(){
 
@@ -238,10 +208,6 @@
                 }
             });
         }
-        
-       
-        
-        
         
         function displaySearchBar(){
             const albumGrid = document.getElementById('album-grid');
@@ -615,236 +581,6 @@
             }
             }
 
-
-         function displayAllTemas() {
-         
-         document.getElementById('album-grid').style.display = 'none';
-            document.getElementById('album-details').style.display = 'block';
-            
-            console.log(document.getElementById('album-grid'));
-            console.log(document.getElementById('album-details'));
-
-            document.getElementById('album-cover').src = "${pageContext.request.contextPath}/imagenes_album/fotoAlbum.jpg"; 
-            
-            allTracks.sort((a, b) => {
-                // Calcula el valor ponderado de cada track
-                console.log(a.nroDescargas, a.nroReproducciones, a.nroListas , a.nroLikes);
-                const valorA = a.nroDescargas * 0.2 + a.nroReproducciones * 0.3 + a.nroListas * 0.2 + a.nroLikes * 0.3;
-                const valorB = b.nroDescargas * 0.2 + b.nroReproducciones * 0.3 + b.nroListas * 0.2 + b.nroLikes * 0.3;
-
-                // Ordena en orden descendente
-                return valorB - valorA; // Mayor a menor
-            });
-            
-            console.log(allTracks);
-            const trackListBody = document.getElementById('track-list-body');
-            trackListBody.innerHTML = '';
-            var posicion = 0;
-            allTracks.forEach((track) => {
-                
-                const row = trackListBody.insertRow();
-                row.className = "trackRow";
-                if(track.direccionWeb !== null && track.direccionWeb !== "-" && track.direccionWeb !== ""){
-                    row.dataset.src = track.direccionWeb;
-                }else if(track.archivo !== null && track.archivo !== "-" && track.archivo !== ""){
-                    row.dataset.src = "${pageContext.request.contextPath}/archivos_musica/" + track.archivo;
-                }
-
-                // Icono Play
-                const playCell = row.insertCell(0);
-                const playIcon = document.createElement("i");
-                playIcon.className = "fa-solid fa-play";
-
-                playIcon.addEventListener("click", function() {
-                    this.classList.toggle('active');
-                    loadTrack(row.dataset.src);
-                    
-                    $.ajax({
-                        url: 'SvEditarParametros',
-                        method: 'POST',
-                        data: { action: "load", value: track.id },
-                        success: function(response) {
-
-                        },
-                        error: function() {
-                           alert("Error");
-                        }
-                    });
-                });
-
-                playCell.appendChild(playIcon);
-
-                // Resto de las celdas
-                row.insertCell(1).textContent = ++posicion;
-                row.insertCell(2).textContent = track.nombre;
-                row.insertCell(3).textContent = track.duracion;
-
-                // Estrella para la canción
-                <%if (estado.equals("Vigente")){%>
-                const iCell = row.insertCell(4);
-                const i = document.createElement("i");
-                i.className = "fa-solid fa-star track-favorite";
-                i.setAttribute('data-id', track.id);
-                i.setAttribute('data-nombre', track.nombre);
-
-
-                // Eliminar estrella existente si hay alguna
-                const existingFavoriteContainer = document.querySelector('.track-favorite-container');
-                if (existingFavoriteContainer) {
-                    existingFavoriteContainer.remove();
-                }
-            
-                // Verificar si el tema está en favoritos y aplicar la clase active si corresponde
-                if (temasFavoritos.has(parseInt(track.id))) {
-                    i.classList.add('active');
-                }
-
-                // Evento click para la estrella del tema
-                i.addEventListener("click", function() {
-                    const id = this.getAttribute('data-id');
-                    const nombreTema = this.getAttribute('data-nombre');
-                    const tipo = this.classList.contains('active') ? "Dejar" : "Seguir";
-
-                    fetch('SvSeguirTema', {
-                        method: "POST",
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: new URLSearchParams({
-                            nombreTema: nombreTema,
-                            tipo: tipo,
-                            id: id
-                        })
-                    })
-                    .then(response => {
-                        if (response.ok) {
-                            if (tipo === "Seguir") {
-                                this.classList.add('active');
-                                temasFavoritos.add(parseInt(id));
-                            } else {
-                                this.classList.remove('active');
-                                temasFavoritos.delete(parseInt(id));
-                            }
-                            actualizarEstrellasTemas();
-                        }
-                        return response.text();
-                    })
-                    .catch(error => console.error("Error al marcar tema como favorito:", error));
-                });
-
-                row.addEventListener("mouseover", () => {
-                    playCell.appendChild(playIcon);  
-                });
-                iCell.appendChild(i);
-                
-                
-                if(track.direccionWeb !== null && track.direccionWeb !== "-" && track.direccionWeb !== ""){
-                const infCell = row.insertCell(5);
-                const inf = document.createElement("i");
-                inf.className = "fa-solid fa-info";
-                infCell.appendChild(inf);
-
-                // Evento de clic para el botón de descarga
-                inf.addEventListener("click", function() {
-                    
-                    const fileUrl = row.dataset.src;
-                    if (fileUrl) {
-                        const a = document.createElement('a');
-                        a.href = fileUrl;
-                        a.target = "_blank";
-
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        
-                        $.ajax({
-                            url: 'SvEditarParametros',
-                            method: 'POST',
-                            data: { action: "descarga", value: track.id },
-                            success: function(response) {
-                                
-                            },
-                            error: function() {
-                               alert("Error");
-                            }
-                        });
-                    } else {
-                        console.error("No se encontró la URL del archivo para descargar.");
-                    }
-                });
-                
-                }else{
-                    const dCell = row.insertCell(5);
-                    const d = document.createElement("i");
-                    d.className = "fa-regular fa-circle-down";
-                    dCell.appendChild(d);
-
-                    // Evento de clic para el botón de descarga
-                    d.addEventListener("click", function() {
-
-                        const fileUrl = row.dataset.src;
-                        if (fileUrl) {
-                            const a = document.createElement('a');
-                            a.href = fileUrl;
-                            a.download = ''; 
-
-                            // Agregar el enlace temporal al DOM, hacer clic y luego eliminarlo
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                        } else {
-                            console.error("No se encontró la URL del archivo para descargar.");
-                        }
-                    });
-                }
-                
-                const tCell = row.insertCell(5);
-                    const t = document.createElement("i");
-                    t.className = "fa-solid fa-caret-down";
-                    tCell.appendChild(t);
-                    
-                    const dropdown = document.createElement("div");
-                    dropdown.className = "dropdown-menu"; // Clase CSS para estilos
-                    dropdown.style.display = "none"; // Ocultar por defecto
-                    dropdown.innerHTML = 
-                        '<div id="reproducciones">Reproducciones: ' + track.nroReproducciones + '</div>' +
-                        '<div id="descargas">Descargas: ' + track.nroDescargas + '</div>' +
-                        '<div id="favoritos">Likes: ' + track.nroLikes + '</div>' +
-                        '<div id="listas">Listas: ' + track.nroListas + '</div>';
-                    tCell.appendChild(dropdown);
-                    
-                    t.addEventListener("click", function () {
-                        const isVisible = dropdown.style.display === "block";
-                        dropdown.style.display = isVisible ? "none" : "block";
-                    });
-                <%}else{%>
-                    const tCell = row.insertCell(4);
-                    const t = document.createElement("i");
-                    t.className = "fa-solid fa-caret-down";
-                    tCell.appendChild(t);
-                    
-                    const dropdown = document.createElement("div");
-                    dropdown.className = "dropdown-menu"; // Clase CSS para estilos
-                    dropdown.style.display = "none"; // Ocultar por defecto
-                    
-                    tCell.appendChild(dropdown);
-                    
-                    
-                    console.log(track.nroReproducciones);
-                    dropdown.innerHTML = 
-                        '<div id="reproducciones">Reproducciones: ' + track.nroReproducciones + '</div>' +
-                        '<div id="descargas">Descargas: ' + track.nroDescargas + '</div>' +
-                        '<div id="favoritos">Likes: ' + track.nroLikes + '</div>' +
-                        '<div id="listas">Listas: ' + track.nroListas + '</div>';
-                    t.addEventListener("click", function () {
-                        const isVisible = dropdown.style.display === "block";
-                        dropdown.style.display = isVisible ? "none" : "block";
-                    });
-                    <%}%>
-            });
-            
-        }
-        
         function displayAlbums(dtList) {
             const albumGrid = document.getElementById('album-grid');
             albumGrid.innerHTML = '';
@@ -1087,18 +823,6 @@
                 playIcon.addEventListener("click", function() {
                     this.classList.toggle('active');
                     loadTrack(row.dataset.src);
-                    
-                    $.ajax({
-                        url: 'SvEditarParametros',
-                        method: 'POST',
-                        data: { action: "load", value: track.id },
-                        success: function(response) {
-
-                        },
-                        error: function() {
-                           alert("Error");
-                        }
-                    });
                 });
 
                 playCell.appendChild(playIcon);
@@ -1167,61 +891,53 @@
                 iCell.appendChild(i);
                 
                 
-                if (track.direccionWeb !== null && track.direccionWeb !== "-" && track.direccionWeb !== "") {
-    const infCell = row.insertCell(5);
-    const inf = document.createElement("i");
-    inf.className = "fa-solid fa-info";
-    infCell.appendChild(inf);
+                if(track.direccionWeb !== null && track.direccionWeb !== "-" && track.direccionWeb !== ""){
+                const infCell = row.insertCell(5);
+                const inf = document.createElement("i");
+                inf.className = "fa-solid fa-info";
+                infCell.appendChild(inf);
 
-    // Evento de clic para el botón de descarga
-    inf.addEventListener("click", function() {
-        const fileUrl = row.dataset.src;
-        if (fileUrl) {
-            const a = document.createElement('a');
-            a.href = fileUrl;
-            a.target = "_blank";
+                // Evento de clic para el botón de descarga
+                inf.addEventListener("click", function() {
+                    
+                    const fileUrl = row.dataset.src;
+                    if (fileUrl) {
+                        const a = document.createElement('a');
+                        a.href = fileUrl;
+                        a.target = "_blank";
 
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    } else {
+                        console.error("No se encontró la URL del archivo para descargar.");
+                    }
+                });
+                
+                }else{
+                    const dCell = row.insertCell(5);
+                    const d = document.createElement("i");
+                    d.className = "fa-regular fa-circle-down";
+                    dCell.appendChild(d);
 
-            $.ajax({
-                url: 'SvEditarParametros',
-                method: 'POST',
-                data: { action: "descarga", value: track.id },
-                success: function(response) {
-                    // Manejar respuesta del servidor
-                },
-                error: function() {
-                    alert("Error");
+                    // Evento de clic para el botón de descarga
+                    d.addEventListener("click", function() {
+
+                        const fileUrl = row.dataset.src;
+                        if (fileUrl) {
+                            const a = document.createElement('a');
+                            a.href = fileUrl;
+                            a.download = ''; 
+
+                            // Agregar el enlace temporal al DOM, hacer clic y luego eliminarlo
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                        } else {
+                            console.error("No se encontró la URL del archivo para descargar.");
+                        }
+                    });
                 }
-            });
-        } else {
-            console.error("No se encontró la URL del archivo para descargar.");
-        }
-    });
-} else {
-    const dCell = row.insertCell(5);
-    const d = document.createElement("i");
-    d.className = "fa-regular fa-circle-down";
-    dCell.appendChild(d);
-
-    // Evento de clic para el botón de descarga
-    d.addEventListener("click", function() {
-        const fileUrl = row.dataset.src;
-        if (fileUrl) {
-            const a = document.createElement('a');
-            a.href = fileUrl;
-            a.download = '';
-
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        } else {
-            console.error("No se encontró la URL del archivo para descargar.");
-        }
-    });
-}
                 <%}%>
             });
             
@@ -1364,18 +1080,6 @@
                     this.classList.toggle('active');
                     console.log('Play clickeado:', this);
                     loadTrack(row.dataset.src);
-                    
-                    $.ajax({
-                        url: 'SvEditarParametros',
-                        method: 'POST',
-                        data: { action: "load", value: track.id },
-                        success: function(response) {
-
-                        },
-                        error: function() {
-                           alert("Error");
-                        }
-                    });
                 });
                 
                 playCell.appendChild(playIcon);
@@ -1457,20 +1161,6 @@
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
-                        
-                        
-                         $.ajax({
-                            url: 'SvEditarParametros',
-                            method: 'POST',
-                            data: { action: "descarga", value: track.id },
-                            success: function(response) {
-                                
-                            },
-                            error: function() {
-                               alert("Error");
-                            }
-                        });
-                        
                     } else {
                         console.error("No se encontró la URL del archivo para descargar.");
                     }
@@ -1489,7 +1179,7 @@
                         if (fileUrl) {
                             const a = document.createElement('a');
                             a.href = fileUrl;
-                            a.download = ''; 
+                            a.download = '';
 
                             // Agregar el enlace temporal al DOM, hacer clic y luego eliminarlo
                             document.body.appendChild(a);
@@ -1532,7 +1222,6 @@
                         document.getElementById("albumCoverPlayer").src = "${pageContext.request.contextPath}/imagenes_lista/lista.png"; 
                     }
                 }
-                
                 audioPlayer.pause();
                 const soundcloudIframe = document.createElement("iframe");
                 soundcloudIframe.className = "iframec";
@@ -1583,8 +1272,6 @@
                 updatePlayButton(isPlaying);
             }
             
-            
-            
         }
         
         // Control de volumen
@@ -1624,13 +1311,8 @@
 
 <style>
     
-    .player .iframec {
-    width: 70px; 
-    height: 80px;
-    overflow: hidden;
-}
-
-*{
+/* Estilos generales */
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -1640,13 +1322,98 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    padding-bottom: 110px;
+}
+    .player .iframec {
+    width: 70px; 
+    height: 80px;
+    overflow: hidden;
+}
+/* Reglas específicas */
+.player {
+    position: fixed;
+    bottom: 0;
+    width: 80%;
+    left: 50%; 
+    transform: translateX(-50%); 
+    background-color: white;
+    color: black; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+    border-radius: 10px 10px 0 0;
 }
 
-.tituloSearch {
-    grid-column: 1 / -1; 
-    margin: 0; 
-    padding: 0.5em 0;
-    font-size: 1.5em;
+.player .album-cover {
+    height: 30px;
+    width: 30px;
+    object-fit: cover;
+    border-radius: 5px;
+    margin-right: 15px;
+}
+
+.player .song-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+.player .song-info .title {
+    font-size: 16px;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player .song-info .artist {
+    font-size: 14px;
+    color: #ccc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player .controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.player .controls button {
+    background: none;
+    border: none;
+    color: black;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.player .controls button:hover {
+    color: #ccc;
+}
+
+.player .additional-options {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.player .additional-options button {
+    background: none;
+    border: none;
+    color: black;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.player .additional-options button:hover {
+    color: #ccc;
 }
 
 .albumImg {
@@ -1662,10 +1429,11 @@ body {
 }
 
 i {
-    display: inline-block; 
+    display: inline-block;
     cursor: pointer;
 }
-.fa-star{
+
+.fa-star {
     cursor: pointer;
     color: #000;
     transition: color 0.3s ease;
@@ -1674,7 +1442,7 @@ i {
     font-size: 1.2em;
 }
 
-.fa-solid fa-play{
+.fa-solid.fa-play {
     cursor: pointer;
     border: none;
     font-size: 1.2em;
@@ -1688,53 +1456,54 @@ i {
     display: flex;
     flex-grow: 1;
 }
+
 .sidebar {
     width: 200px;
     background-color: #f0f0f0;
     padding: 20px;
 }
+
 .sidebar-option {
     cursor: pointer;
     padding: 10px;
     margin-bottom: 10px;
 }
+
 .sidebar-option:hover {
     background-color: #e0e0e0;
 }
+
 .main-content {
     flex-grow: 1;
     padding: 20px;
     display: flex;
     flex-direction: column;
 }
+
 .content-title {
     font-size: 24px;
     margin-bottom: 20px;
 }
+
 .genres-container {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
 }
+
 .genre {
     background-color: #e0e0e0;
     padding: 20px;
     text-align: center;
     cursor: pointer;
 }
-.player {
-    width: 200px;
-    background-color: #f0f0f0;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
+
 .controls {
     display: flex;
     justify-content: center;
     margin-top: 20px;
 }
+
 .controls button {
     margin: 0 10px;
     font-size: 24px;
@@ -1742,11 +1511,12 @@ i {
     border: none;
     cursor: pointer;
 }
+
 .volume {
     width: 100%;
     margin-top: 20px;
 }
-  
+
 .album-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -1757,17 +1527,19 @@ i {
     border-radius: 15px;
     overflow: hidden;
 }
+
 .table thead {
     background-color: #1DB954;
     color: white;
 }
+
 .album-card,
 .genero-card,
 .artista-card,
 .tema-card,
 .listaP-card,
 .listaD-card,
-.cliente-card{
+.cliente-card {
     cursor: pointer;
     transition: transform 0.3s;
     border: 1px solid #ccc;
@@ -1775,14 +1547,86 @@ i {
     background-color: #fff;
     text-align: center;
 }
+
 .album-card:hover {
     transform: scale(1.05);
 }
+
 .track-list {
     max-height: 300px;
     overflow-y: auto;
 }
+
 .hidden-column {
     display: none;
 }
+
+/* Adaptaciones para dispositivos móviles */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        padding: 10px;
+    }
+
+    .sidebar-option {
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    .main-content {
+        padding: 10px;
+    }
+
+    .content-title {
+        font-size: 20px;
+    }
+
+    .genres-container {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+    }
+
+    .player {
+        padding: 10px;
+    }
+
+    .controls button {
+        font-size: 18px;
+    }
+
+    .album-cover {
+        height: 200px;
+        width: 200px;
+    }
+
+    .albumImg {
+        height: 100px;
+        width: 100px;
+    }
+
+    .table {
+        font-size: 12px;
+    }
+
+    .table thead {
+        font-size: 14px;
+    }
+
+    .album-card,
+    .genero-card,
+    .artista-card,
+    .tema-card,
+    .listaP-card,
+    .listaD-card,
+    .cliente-card {
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    .track-list {
+        max-height: 200px;
+    }
+}
+
+
 </style>

@@ -15,13 +15,13 @@
     </welcome-file-list>
     
     <filter>
-        <filter-name>AccesFilter</filter-name>
-        <filter-class>servlets.AccesFilter</filter-class>
+        <filter-name>DeviceRedirectFilter</filter-name>
+        <filter-class>servlets.DeviceRedirectFilter</filter-class>
     </filter>
 
     <filter-mapping>
-        <filter-name>AccesFilter</filter-name>
-        <url-pattern>/*</url-pattern>
+        <filter-name>DeviceRedirectFilter</filter-name>
+        <url-pattern>/index.jsp</url-pattern>
     </filter-mapping>
     
 <!--    <servlet>
